@@ -9,8 +9,9 @@ Function Get-HttpSecHead
             This command will get the HTTP headers from the target webserver and test for the presence of variuos security related HTTP headers and also display the cookie information.
 
             Written by Dave Hardy, davehardy20@gmail.com @davehrdy20
+            with consultancy from Mike Woodhead, @ydoow
 
-            Version 0.1
+            Version 0.2
 
             .Example
             PS C:> Get-Httphead -url https://www.linkedin.com
@@ -85,27 +86,26 @@ Function Get-HttpSecHead
     [cmdletbinding()]
     Param(
         [Parameter(Position = 0,Mandatory,
-                ValueFromPipeline,
-                ValueFromPipelineByPropertyName,
+                ValueFromPipeline = $true,
+                ValueFromPipelineByPropertyName = $true,
         HelpMessage = 'The URL for inspection, e.g. https://www.linkedin.com')]
         [ValidateNotNullorEmpty()]
         [Alias('link')]
         [string]$url
     )
-
-
-    $webrequest = Invoke-WebRequest -Uri $url -SessionVariable websession 
+    #User agent string is required to support Content-Security-Policy retrieval, nativly Invoke-WebRequest does not send a user agent string that supports CSP
+    $UserAgent = 'Mozilla/5.0 (Windows NT 6.3; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/30.0.1599.101 Safari/537.36'
+    $webrequest = Invoke-WebRequest -Uri $url -SessionVariable websession -UserAgent $UserAgent
     $cookies = $websession.Cookies.GetCookies($url) 
     Write-Host -Object "`n"
     Write-Host 'Header Information for' $url
     Write-Host -Object ($webrequest.Headers|Out-String)
-    Write-Host
 
     Write-Host -ForegroundColor White -Object "HTTP security Headers`nConsider adding the values in RED to improve the security of the webserver. `n"
 
     if($webrequest.Headers.ContainsKey('x-xss-protection')) 
     {
-        Write-Host -ForegroundColor Green -Object "X-XSS-Protection Header PRESENT`n"
+        Write-Host -ForegroundColor Green -Object 'X-XSS-Protection Header PRESENT'
     }
     else 
     {
@@ -155,8 +155,7 @@ Function Get-HttpSecHead
 
 
     Write-Host 'Cookies Set by' $url
-    Write-Host -Object "Inspect cookies that don't have the HTTPOnly and Secure flags set."
-    Write-Host -Object "`n"
+    Write-Host -Object "Inspect cookies that don't have the HTTPOnly and Secure flags set.`n"
     foreach ($cookie in $cookies) 
     { 
         Write-Host -Object "$($cookie.name) = $($cookie.value)"
@@ -177,5 +176,47 @@ Function Get-HttpSecHead
             Write-Host -ForegroundColor Red 'Secure Flag Set' = "$($cookie.Secure)"
         }
         Write-Host 'Domain' = "$($cookie.Domain) `n"
+    }
+
+    #Determine Server Header Present
+    Write-Host -Object "Other Headers that require attention`nThese headers give away information regarding the type of web server, web framework and versions.`nAttackers can use information this to determine vulnerable versions of software for instance.`n"
+    if($webrequest.Headers.Keys -match 'server' -and $webrequest.Headers.Values -like 'apache*') 
+    {
+        Write-Host -ForegroundColor Red 'Server: ' $webrequest.Headers.Server
+    }
+    if($webrequest.Headers.Keys -match 'server' -and $webrequest.Headers.Values -like 'nginx*') 
+    {
+        Write-Host -ForegroundColor Red 'Server: ' $webrequest.Headers.Server
+    }
+    if($webrequest.Headers.Keys -match 'server' -and $webrequest.Headers.Values -like 'microsoft*') 
+    {
+        Write-Host -ForegroundColor Red 'Server: ' $webrequest.Headers.Server
+    }
+    #Determine X-Powered-By Header Present
+    if($webrequest.Headers.Keys -match 'x-powered-by' -and $webrequest.Headers.Values -like 'php*') 
+    {
+        Write-Host -ForegroundColor Red 'X-Powered-By: ' $webrequest.Headers.'x-powered-by'
+    }
+    if($webrequest.Headers.Keys -match 'x-powered-by' -and $webrequest.Headers.Values -like 'asp.net*') 
+    {
+        Write-Host -ForegroundColor Red 'X-Powered-By: ' $webrequest.Headers.'x-powered-by'
+    }
+    if($webrequest.Headers.Keys -match 'x-powered-by' -and $webrequest.Headers.Values -like 'mono*') 
+    {
+        Write-Host -ForegroundColor Red 'X-Powered-By: ' $webrequest.Headers.'x-powered-by'
+    }
+    if($webrequest.Headers.Keys -match 'x-powered-by' -and $webrequest.Headers.Values -like 'servlet*') 
+    {
+        Write-Host -ForegroundColor Red 'X-Powered-By: ' $webrequest.Headers.'x-powered-by'
+    }
+
+    #Determine Other X- Headers
+    if($webrequest.Headers.Keys -match 'x-aspnet-version') 
+    {
+        Write-Host -ForegroundColor Red 'X-AspNet-Version: ' $webrequest.Headers.'x-aspnet-version'
+    }
+    if($webrequest.Headers.Keys -match 'x-aspnetmvc-version') 
+    {
+        Write-Host -ForegroundColor Red 'X-AspNetMvc-Version: ' $webrequest.Headers.'x-aspnetmvc-version'
     }
 }
