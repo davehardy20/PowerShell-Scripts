@@ -17,7 +17,7 @@ Function Get-HttpSecHead
             Written by Dave Hardy, davehardy20@gmail.com @davehardy20
             with consultancy from Mike Woodhead, @ydoow
 
-            Version 0.5
+            Version 0.6
 
             .Example
             PS C:> Get-Httphead -url https://www.linkedin.com
@@ -177,7 +177,9 @@ Function Get-HttpSecHead
         Start-Transcript -Path $logfile
     }
 
-    $webrequest = Invoke-WebRequest -Uri $url -SessionVariable websession 
+    #User agent string is required to support Content-Security-Policy retrieval, nativly Invoke-WebRequest does not send a user agent string that supports CSP
+    $UserAgent = 'Mozilla/5.0 (Windows NT 6.3; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/30.0.1599.101 Safari/537.36'
+    $webrequest = Invoke-WebRequest -Uri $url -SessionVariable websession -UserAgent $UserAgent 
     $cookies = $websession.Cookies.GetCookies($url) 
     Write-Host -Object "`n"
     Write-Host 'Header Information for' $url
