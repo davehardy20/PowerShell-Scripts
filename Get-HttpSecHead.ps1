@@ -4,20 +4,20 @@ Function Get-HttpSecHead
 {
     <#
             .Synopsis
-            Retrive HTTP Headers from target webserver
+            Retrieve HTTP Headers from target webserver
             .Description
-            This command will get the HTTP headers from the target webserver and test for the presence of variuos security related HTTP headers and also display the cookie information.
+            This cmdlet will get the HTTP headers from the target webserver and test for the presence of various security related HTTP headers and also display the cookie information.
             .Parameter url
             The target http or https link
-            .Parameter detail
-            This is a switch to provide detailed output based up the find Http header findings
+            .Parameter log
+            This is a switch to provide a log of the output from the script, via the Start-Transcript cmdlet. The log file is stored in the working directory.
 
 
 
-            Written by Dave Hardy, davehardy20@gmail.com @davehrdy20
+            Written by Dave Hardy, davehardy20@gmail.com @davehardy20
             with consultancy from Mike Woodhead, @ydoow
 
-            Version 0.4
+            Version 0.5
 
             .Example
             PS C:> Get-Httphead -url https://www.linkedin.com
@@ -98,7 +98,13 @@ Function Get-HttpSecHead
         HelpMessage = 'The URL for inspection, e.g. https://www.linkedin.com')]
         [ValidateNotNullorEmpty()]
         [Alias('link')]
-        [string]$url
+        [string]$url,
+
+        
+        [Parameter(Position = 1,Mandatory = $false,
+        HelpMessage = "Log the script's output to a logfile")]
+        [ValidateSet('y','Y','yes','Yes','YES')]
+        [string]$log
     )
         
     #HTTP Sec, Server, X-Powered and other X-Powered Headers
@@ -106,10 +112,10 @@ Function Get-HttpSecHead
         'x-xss-protection', 
         'Strict-Transport-Security', 
         'Content-Security-Policy', 
-        'Content-Security-Policy-Report-Only',
+        'Content-Security-Policy-Report-Only', 
         'X-Frame-Options', 
         'X-Content-Type-Options', 
-        'Public-Key-Pins',
+        'Public-Key-Pins', 
         'Public-Key-Pins-Report-Only'
     )
 
@@ -152,7 +158,7 @@ Function Get-HttpSecHead
         'perl*', 
         'ruby*', 
         'Servlet*', 
-        'EasyEngine 3.4.0'
+        'EasyEngine*'
     )
 
     $otherxpow = @(
@@ -162,6 +168,15 @@ Function Get-HttpSecHead
     )
     
     #Main Script
+    #Is a log required?
+    if($log)
+    {
+        $time = Get-Timestamp
+        $domain = ([System.Uri]$url).Host -replace '^www\.'
+        $logfile = '.\Sec-Headers-Log-'+$domain+'-'+$time+'.txt'
+        Start-Transcript -Path $logfile
+    }
+
     $webrequest = Invoke-WebRequest -Uri $url -SessionVariable websession 
     $cookies = $websession.Cookies.GetCookies($url) 
     Write-Host -Object "`n"
@@ -233,6 +248,12 @@ Function Get-HttpSecHead
         {
             Write-Host -ForegroundColor Red $otherx $webrequest.Headers.$otherx
         }
+    }
+
+    #Stop logging
+    if($log)
+    {
+        Stop-Transcript
     }
 }
 
