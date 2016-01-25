@@ -17,7 +17,7 @@ Function Get-HttpSecHead
             Written by Dave Hardy, davehardy20@gmail.com @davehardy20
             with consultancy from Mike Woodhead, @ydoow
 
-            Version 0.6
+            Version 0.7
 
             .Example
             PS C:> Get-Httphead -url https://www.linkedin.com
@@ -106,7 +106,20 @@ Function Get-HttpSecHead
         [ValidateSet('y','Y','yes','Yes','YES')]
         [string]$log
     )
-        
+    #Timestamp Function
+    Function Get-Timestamp 
+    {
+        $n = Get-Date
+        #pad values with leading 0 if necessary
+        $mo = (($n.Month).ToString()).PadLeft(2,'0')
+        $dy = (($n.Day).ToString()).PadLeft(2,'0')
+        $yr = ($n.Year).ToString()
+        $hr = (($n.hour).ToString()).PadLeft(2,'0')
+        $mn = (($n.Minute).ToString()).PadLeft(2,'0')
+        $sec = (($n.Second).ToString()).PadLeft(2,'0')
+        $result = $mo+$dy+$yr+$hr+$mn+$sec
+        return $result
+    }   
     #HTTP Sec, Server, X-Powered and other X-Powered Headers
     $secheaders = @(
         'x-xss-protection', 
