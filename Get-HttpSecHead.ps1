@@ -11,13 +11,14 @@ Function Get-HttpSecHead
             The target http or https link
             .Parameter log
             This is a switch to provide a log of the output from the script, via the Start-Transcript cmdlet. The log file is stored in the working directory.
-
+            .Parameter cred
+            This is a switch to provide the ability to log into a website before accessing the headers, this is sometimes a requirement for development websites that are hidden behind some sort of logon requirement ie BAsic Auth.
 
 
             Written by Dave Hardy, davehardy20@gmail.com @davehardy20
             with consultancy from Mike Woodhead, @ydoow
 
-            Version 0.7
+            Version 0.8
 
             .Example
             PS C:> Get-Httphead -url https://www.linkedin.com
@@ -104,8 +105,15 @@ Function Get-HttpSecHead
         [Parameter(Position = 1,Mandatory = $false,
         HelpMessage = "Log the script's output to a logfile")]
         [ValidateSet('y','Y','yes','Yes','YES')]
-        [string]$log
-    )
+        [string]$log,
+
+
+        [Parameter(Position = 2,Mandatory = $false,
+        HelpMessage = 'Some sites may require credentials to access the site, usually dev sites hidden behind a Basic Auth logon page')]
+        [ValidateSet('y','Y','yes','Yes','YES')]
+        [string]$cred
+        )
+
     #Timestamp Function
     Function Get-Timestamp 
     {
@@ -119,7 +127,8 @@ Function Get-HttpSecHead
         $sec = (($n.Second).ToString()).PadLeft(2,'0')
         $result = $mo+$dy+$yr+$hr+$mn+$sec
         return $result
-    }   
+    }
+ 
     #HTTP Sec, Server, X-Powered and other X-Powered Headers
     $secheaders = @(
         'x-xss-protection', 
@@ -190,9 +199,27 @@ Function Get-HttpSecHead
         Start-Transcript -Path $logfile
     }
 
-    #User agent string is required to support Content-Security-Policy retrieval, nativly Invoke-WebRequest does not send a user agent string that supports CSP
+    #Are Creds required?
+    if($cred)
+    {
+        $user = Read-Host 'Enter Usernme: '
+        $securepass = Read-Host 'Enter Password: ' -AsSecureString
+        $credentials = New-Object System.Management.automation.PSCredential ($user, $securepass)
+    }
+
+    #User agent string is required to support Content-Security-Policy retrieval, natively Invoke-WebRequest does not send a user agent string that supports CSP
     $UserAgent = 'Mozilla/5.0 (Windows NT 6.3; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/30.0.1599.101 Safari/537.36'
-    $webrequest = Invoke-WebRequest -Uri $url -SessionVariable websession -UserAgent $UserAgent 
+    
+    #Webrequest with creds or not
+    if($cred)
+    {
+    $webrequest = Invoke-WebRequest -Uri $url -SessionVariable websession -UserAgent $UserAgent -Credential $credentials
+    }
+    else
+    {
+    $webrequest = Invoke-WebRequest -Uri $url -SessionVariable websession -UserAgent $UserAgent
+    }
+     
     $cookies = $websession.Cookies.GetCookies($url) 
     Write-Host -Object "`n"
     Write-Host 'Header Information for' $url
@@ -271,8 +298,3 @@ Function Get-HttpSecHead
         Stop-Transcript
     }
 }
-
-
-
-
-
