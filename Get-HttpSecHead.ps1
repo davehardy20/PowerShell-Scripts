@@ -18,7 +18,7 @@ Function Get-HttpSecHead
             Written by Dave Hardy, davehardy20@gmail.com @davehardy20
             with consultancy from Mike Woodhead, @ydoow
 
-            Version 0.8
+            Version 0.9
 
             .Example
             PS C:> Get-Httphead -url https://www.linkedin.com
@@ -213,11 +213,11 @@ Function Get-HttpSecHead
     #Webrequest with creds or not
     if($cred)
     {
-    $webrequest = Invoke-WebRequest -Uri $url -SessionVariable websession -UserAgent $UserAgent -Credential $credentials
+    $webrequest = Invoke-WebRequest -Uri $url -MaximumRedirection 0 -ErrorAction Ignore -SessionVariable websession -UserAgent $UserAgent -Credential $credentials
     }
     else
     {
-    $webrequest = Invoke-WebRequest -Uri $url -SessionVariable websession -UserAgent $UserAgent
+    $webrequest = Invoke-WebRequest -Uri $url -MaximumRedirection 0 -ErrorAction Ignore -SessionVariable websession -UserAgent $UserAgent
     }
      
     $cookies = $websession.Cookies.GetCookies($url) 
