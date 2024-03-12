@@ -1,15 +1,6 @@
 function Decrypt-RDCMan ($FilePath) {
 <#
 .SYNOPSIS
-
-This script should be able to decrpt all passwords stored in the RDCMan config file
-
-Function: Decrypt-RDCMan
-Author:Ben Turner @benpturner, Rich Hicks @scriptmonkey_
-	
-.EXAMPLE
-
-Decrypt-RDCMan -FilePath
 #>
     if (!$FilePath) {
         [xml]$config = Get-Content "$env:LOCALAPPDATA\microsoft\remote desktop connection manager\rdcman.settings"
